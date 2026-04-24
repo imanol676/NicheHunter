@@ -18,7 +18,8 @@ class RawPost(Base):
     score = Column(Integer)
     num_comments = Column(Integer)
     reddit_created_at = Column(DateTime)
-    scraped_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    url = Column(String)
+    scraped_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     scan_job = relationship("ScanJob", back_populates="raw_posts")
     pain_points = relationship("PainPoint", back_populates="raw_post")
