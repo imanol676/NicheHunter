@@ -15,9 +15,9 @@ class PainPointCluster(Base):
     summary = Column(Text)
     size = Column(Integer)
     avg_severity_score = Column(Float)
-    centroid = Column(Vector(1536))
+    centroid = Column(Vector(3072))
     representative_samples = Column(JSONB)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     scan_job = relationship("ScanJob", back_populates="clusters")
     pain_points = relationship("PainPoint", back_populates="cluster")

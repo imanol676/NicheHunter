@@ -13,7 +13,7 @@ class PainPoint(Base):
     raw_post_id = Column(UUID(as_uuid=True), ForeignKey("raw_posts.id"))
     cluster_id = Column(UUID(as_uuid=True), ForeignKey("pain_point_clusters.id"), nullable=True)
     description = Column(Text)
-    embedding = Column(Vector(1536))
+    embedding = Column(Vector(3072))
     category = Column(String)
     severity = Column(String)
     confidence_score = Column(Float)
