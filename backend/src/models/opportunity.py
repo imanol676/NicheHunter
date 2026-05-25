@@ -19,7 +19,7 @@ class Opportunity(Base):
     opportunity_score = Column(Float)
     difficulty = Column(String)
     strategies = Column(JSONB)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     cluster = relationship("PainPointCluster", back_populates="opportunities")
     saved_by_orgs = relationship("SavedOpportunity", back_populates="opportunity")
