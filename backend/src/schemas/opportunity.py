@@ -12,7 +12,7 @@ class OpportunityBase(BaseModel):
     competitive_landscape: str
     opportunity_score: float
     difficulty: str
-    strategies: Optional[Dict[str, Any]] = None
+    strategies: Optional[List[str]] = None
 
 class OpportunityCreate(OpportunityBase):
     cluster_id: UUID
