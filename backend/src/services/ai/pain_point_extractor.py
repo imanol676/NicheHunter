@@ -28,6 +28,7 @@ async def prueba_llm_gratuito(texto_del_post: str):
                 Lee la queja del usuario y extrae el dolor de mercado (pain point) principal.
                 IMPORTANTE: DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura exacta y sin texto adicional:
                 {
+                    "is_valid_pain_point": true o false (evalúa objetivamente si el post contiene un dolor real. Si es solo una pregunta general, noticia o spam, pon false),
                     "content": "resumen del problema principal en 1 sola oración",
                     "category": "una palabra clave (ej: finanzas, gestion, marketing, ventas)",
                     "severity_score": un numero del 1.0 al 10.0 evaluando qué tan grave es el dolor
@@ -46,11 +47,17 @@ async def prueba_llm_gratuito(texto_del_post: str):
 
 #Procesamiento en lote de posts:
 
-async def procesar_lote_de_posts():
-    print("Conectando a la base de datos...")
+async def procesar_lote_de_posts(scan_job_id: str):
+    print("Buscando posts sin analizar...")
     async with AsyncSessionLocal() as session:
-        
-        resultado = await session.execute(select(RawPost).limit(3))
+        # Buscamos RawPosts que aún no tengan un PainPoint asociado (limitamos a 15 para evitar Rate Limits)
+        resultado = await session.execute(
+            select(RawPost)
+            .outerjoin(PainPoint, RawPost.id == PainPoint.raw_post_id)
+            .filter(PainPoint.id == None)
+            .filter(RawPost.scan_job_id == scan_job_id)
+            .limit(100)
+        )
         posts_reales = resultado.scalars().all()
         
         for post in posts_reales:
@@ -62,8 +69,14 @@ async def procesar_lote_de_posts():
            
             datos_ia = await prueba_llm_gratuito(texto_completo)
             
+            # Si el modelo determina que no hay dolor real (ej. es una pregunta genérica), descartamos el post
+            if not datos_ia.get("is_valid_pain_point", True):
+                print(f" Post descartado por la IA (No contiene un dolor real).")
+                await session.delete(post)
+                continue
+                
          
-            datos_ia['severity'] = float(datos_ia['severity_score'])
+            datos_ia['severity'] = float(datos_ia.get('severity_score', 5.0))
             datos_ia['confidence_score'] = float(datos_ia.get('confidence_score', 0.7))
             datos_ia['metadata'] = {}
 

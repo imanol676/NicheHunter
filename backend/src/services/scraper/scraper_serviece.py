@@ -13,7 +13,7 @@ async def pausa_humana(min_segundos: float = 2.0, max_segundos: float = 5.0):
     await asyncio.sleep(tiempo_espera)
 
 
-async def run_scraper(subreddits: list[str]):
+async def run_scraper(subreddits: list[str], scan_job_id: str):
     print(f"Iniciando escaneo de {len(subreddits)} subreddits...")
     
     for sub in subreddits:
@@ -22,16 +22,19 @@ async def run_scraper(subreddits: list[str]):
         # 1. Llamar a try_fetch_reddit
         posts = await try_fetch_reddit(sub)
         print(f"Se encontraron {len(posts)} posts limpios.")
-        await guardar_posts_en_db(posts)
+        await guardar_posts_en_db(posts, scan_job_id)
         # 2. Hacer la pausa humana ANTES de pasar al siguiente subreddit
         if sub != subreddits[-1]:
             await pausa_humana(2.5, 5.5)
 
-async def guardar_posts_en_db(posts_limpios: list[dict]):
+async def guardar_posts_en_db(posts_limpios: list[dict], scan_job_id: str):
     if not posts_limpios:
         return
         
     async with AsyncSessionLocal() as session:
+        # Agregamos el scan_job_id a cada post
+        for p in posts_limpios:
+            p['scan_job_id'] = scan_job_id
         # Preparamos la orden de inserción masiva
         stmt = insert(RawPost).values(posts_limpios)
         

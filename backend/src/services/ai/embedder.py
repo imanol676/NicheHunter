@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from sqlalchemy import select
 from src.db.engine import AsyncSessionLocal
-from src.models import PainPoint
+from src.models import PainPoint, RawPost
 
 load_dotenv()
 
@@ -23,10 +23,15 @@ async def generar_vector_azure(texto: str) -> list[float]:
     )
     return response.data[0].embedding
 
-async def procesar_embeddings_pendientes():
+async def procesar_embeddings_pendientes(scan_job_id: str):
     print("Buscando Pain Points sin vector...")
     async with AsyncSessionLocal() as session:
-        resultado = await session.execute(select(PainPoint).filter(PainPoint.embedding == None))
+        resultado = await session.execute(
+            select(PainPoint)
+            .join(RawPost, PainPoint.raw_post_id == RawPost.id)
+            .filter(PainPoint.embedding == None)
+            .filter(RawPost.scan_job_id == scan_job_id)
+        )
         puntos_pendientes = resultado.scalars().all()
         
         print(f"Se encontraron {len(puntos_pendientes)} registros pendientes.")

@@ -4,12 +4,17 @@ from sklearn.cluster import AgglomerativeClustering
 
 from sqlalchemy import select
 from src.db.engine import AsyncSessionLocal
-from src.models import PainPoint, PainPointCluster
+from src.models import PainPoint, PainPointCluster, RawPost
 
-async def agrupar_pain_points():
+async def agrupar_pain_points(scan_job_id: str):
     print("Buscando Pain Points sin agrupar...")
     async with AsyncSessionLocal() as session:
-        resultado = await session.execute(select(PainPoint).filter(PainPoint.cluster_id == None))
+        resultado = await session.execute(
+            select(PainPoint)
+            .join(RawPost, PainPoint.raw_post_id == RawPost.id)
+            .filter(PainPoint.cluster_id == None)
+            .filter(RawPost.scan_job_id == scan_job_id)
+        )
         puntos = resultado.scalars().all()
         
         if not puntos:
@@ -23,16 +28,16 @@ async def agrupar_pain_points():
         matriz_vectores = np.array(vectores)
         
 
-        clustering = AgglomerativeClustering(
-            n_clusters=None,
-            distance_threshold=0.3, 
-            metric='cosine',
-            linkage='average'
-        )
-        
-      
-        etiquetas = clustering.fit_predict(matriz_vectores)
-        
+        if len(puntos) == 1:
+            etiquetas = [0]
+        else:
+            clustering = AgglomerativeClustering(
+                n_clusters=None,
+                distance_threshold=0.3, 
+                metric='cosine',
+                linkage='average'
+            )
+            etiquetas = clustering.fit_predict(matriz_vectores)
 
         grupos = {}
         for i, etiqueta_cluster in enumerate(etiquetas):
@@ -52,6 +57,7 @@ async def agrupar_pain_points():
             
             # Creamos el cluster
             nuevo_cluster = PainPointCluster(
+                scan_job_id=scan_job_id,
                 size=len(puntos_del_grupo),
                 centroid=centroide,
                 label=puntos_del_grupo[0].category # Por ahora le ponemos la categoría del primero

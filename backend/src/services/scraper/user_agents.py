@@ -20,9 +20,9 @@ USER_AGENTS = [
 
 def get_random_headers() -> dict:
 
-    agente_elegido = random.choice(USER_AGENTS)
     return {
-        "User-Agent": agente_elegido,
+        # Reddit prefiere User-Agents que identifiquen claramente a la aplicación
+        "User-Agent": "windows:com.painpointscraper.v1:1.0 (by /u/imanol)",
         "Accept": "application/json",
         "Accept-Language": "en-US,en;q=0.9"
     }

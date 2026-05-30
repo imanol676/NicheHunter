@@ -13,7 +13,7 @@ class SavedOpportunity(Base):
     opportunity_id = Column(UUID(as_uuid=True), ForeignKey("opportunities.id"))
     user_notes = Column(Text)
     status = Column(String, default="new")
-    saved_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    saved_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     organization = relationship("Organization", back_populates="saved_opportunities")
     opportunity = relationship("Opportunity", back_populates="saved_by_orgs")

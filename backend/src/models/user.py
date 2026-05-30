@@ -11,4 +11,4 @@ class User(Base):
     clerk_id = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     name = Column(String)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

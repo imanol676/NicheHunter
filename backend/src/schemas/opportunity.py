@@ -13,6 +13,15 @@ class OpportunityBase(BaseModel):
     opportunity_score: float
     difficulty: str
     strategies: Optional[List[str]] = None
+    post_count: Optional[int] = 1
+    total_upvotes: Optional[int] = 0
+    sentiment: Optional[str] = None
+    urgency: Optional[str] = None
+    willingness_to_pay: Optional[str] = None
+    niche: Optional[str] = None
+    temporal_trends: Optional[str] = None
+    emerging_niches: Optional[str] = None
+    reddit_links: Optional[List[str]] = []
 
 class OpportunityCreate(OpportunityBase):
     cluster_id: UUID

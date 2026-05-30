@@ -13,7 +13,7 @@ class Organization(Base):
     lemonsqueezy_customer_id = Column(String, unique=True)
     plan_tier = Column(String, default="Explorer")
     credits_remaining = Column(Integer, default=0)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     subscriptions = relationship("Subscription", back_populates="organization")
     scan_jobs = relationship("ScanJob", back_populates="organization")
