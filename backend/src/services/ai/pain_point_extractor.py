@@ -24,14 +24,22 @@ async def prueba_llm_gratuito(texto_del_post: str):
         messages=[
             {
                 "role": "system", 
-                "content": """Eres un sistema backend automatizado de análisis de datos. 
-                Lee la queja del usuario y extrae el dolor de mercado (pain point) principal.
-                IMPORTANTE: DEBES responder ÚNICAMENTE con un objeto JSON válido con esta estructura exacta y sin texto adicional:
+                "content": """You are a highly strict B2B Market Research Data Analyst. 
+                Read the user's post and extract the main market pain point.
+                CRITICAL RULES FOR EXTRACTION:
+                1. Only extract REAL frictions, workflow bottlenecks, money leaks, or tedious manual tasks.
+                2. REJECT (is_valid_pain_point: false) any aspirational desires or vague goals (e.g. "I want to make $100M", "I want more customers").
+                3. REJECT general questions, news, self-promotion, or spam.
+                4. REJECT personal anecdotes or one-off complaints that do NOT represent a systemic B2B market problem. We only want structural flaws.
+                5. The severity score MUST be objective. Do NOT give an 8.0 to vague complaints. An 8.0+ means "If this is not solved, the business loses money or hours of time daily."
+                
+                IMPORTANT: YOU MUST respond ONLY with a valid JSON object using this exact structure and without any additional text. Write everything in English:
                 {
-                    "is_valid_pain_point": true o false (evalúa objetivamente si el post contiene un dolor real. Si es solo una pregunta general, noticia o spam, pon false),
-                    "content": "resumen del problema principal en 1 sola oración",
-                    "category": "una palabra clave (ej: finanzas, gestion, marketing, ventas)",
-                    "severity_score": un numero del 1.0 al 10.0 evaluando qué tan grave es el dolor
+                    "is_valid_pain_point": true or false,
+                    "content": "summary of the specific actionable friction in 1 single sentence",
+                    "category": "a keyword (e.g., finance, management, marketing, sales)",
+                    "severity_score": a float from 1.0 to 10.0 evaluating how severe the actionable pain is,
+                    "justification": "Brief 10-word reason why this severity score was given"
                 }"""
             },
             {"role": "user", "content": texto_del_post}
@@ -63,11 +71,13 @@ async def procesar_lote_de_posts(scan_job_id: str):
         for post in posts_reales:
             print(f"\nAnalizando post: {post.title[:50]}...")
             
-           
             texto_completo = f"Título: {post.title}\nCuerpo: {post.body}"
             
-           
-            datos_ia = await prueba_llm_gratuito(texto_completo)
+            try:
+                datos_ia = await prueba_llm_gratuito(texto_completo)
+            except Exception as e:
+                print(f" Error al extraer pain point: {e}")
+                continue
             
             # Si el modelo determina que no hay dolor real (ej. es una pregunta genérica), descartamos el post
             if not datos_ia.get("is_valid_pain_point", True):

@@ -4,6 +4,5 @@ from .scan_job import ScanJob
 from .raw_post import RawPost
 from .pain_point import PainPoint
 from .cluster import PainPointCluster
-from .opportunity import Opportunity
-from .saved_opportunity import SavedOpportunity
+from .validation_report import ValidationReport
 from .user import User

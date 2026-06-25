@@ -1,21 +1,38 @@
 import httpx
-import os
-from dotenv import load_dotenv
+import random
+import asyncio
 from bs4 import BeautifulSoup
 
-load_dotenv()
-
-SCRAPER_API_KEY = os.getenv("SCRAPER_API_KEY")
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
+]
 
 async def try_fetch_reddit(subreddit: str) -> list:
     # Usamos old.reddit.com porque su HTML es increíblemente ligero y fácil de parsear
-    # Obtenemos el "Top del Año" para encontrar dolores altamente frecuentes
-    target_url = f"https://old.reddit.com/r/{subreddit}/top/?sort=top&t=year"
-    url = f"http://api.scraperapi.com?api_key={SCRAPER_API_KEY}&url={target_url}&premium=true"
+    # Obtenemos el "Top de Todos los Tiempos" para encontrar los dolores más grandes de la historia del sub
+    url = f"https://old.reddit.com/r/{subreddit}/top/?sort=top&t=all&limit=150"
+    
+    headers = {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1"
+    }
     
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            respuesta = await client.get(url)
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            respuesta = await client.get(url, headers=headers)
+            
+            if respuesta.status_code == 429:
+                print(f"Reddit Rate Limit (429) en r/{subreddit}. Esperando 10 segundos antes de reintentar...")
+                await asyncio.sleep(10)
+                respuesta = await client.get(url, headers=headers)
+
             if respuesta.status_code != 200:
                 print(f"Reddit API Error: HTTP {respuesta.status_code} - {respuesta.text[:100]}")
                 return []
@@ -60,16 +77,17 @@ async def try_fetch_reddit(subreddit: str) -> list:
                 
                 # Para un MVP, el Título + Metadata suele ser suficiente si no podemos acceder al JSON.
                 posts.append({
-                    "reddit_id": reddit_id,
-                    "subreddit": subreddit,
+                    "source_id": reddit_id,
+                    "source_platform": "reddit",
+                    "source_community": subreddit,
                     "title": title,
                     "body": "", # El body no está disponible en la vista de lista
-                    "score": score,
-                    "num_comments": num_comments,
+                    "engagement_score": score,
+                    "reply_count": num_comments,
                     "url": f"https://www.reddit.com{permalink}"
                 })
             
-            print(f"ScraperAPI HTML Parsing: Encontrados {len(posts)} posts limpios en old.reddit.com")
+            print(f"Artesanal HTML Parsing: Encontrados {len(posts)} posts limpios en r/{subreddit} usando User-Agent rotativo.")
             return posts
     except Exception as e:
         print(f"Error de red o proxy al conectar con Reddit HTML: {str(e)}")

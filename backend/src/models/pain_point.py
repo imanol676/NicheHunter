@@ -21,5 +21,5 @@ class PainPoint(Base):
     metadata_ = Column("metadata", JSONB)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
-    raw_post = relationship("RawPost", back_populates="pain_points")
-    cluster = relationship("PainPointCluster", back_populates="pain_points")
+    raw_post = relationship("RawPost", back_populates="pain_points", lazy="selectin")
+    cluster = relationship("PainPointCluster", back_populates="pain_points", lazy="selectin")

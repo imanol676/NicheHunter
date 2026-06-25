@@ -1,5 +1,6 @@
 from typing import AsyncGenerator
 import jwt
+from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +9,9 @@ from src.db.engine import AsyncSessionLocal
 from src.models.user import User
 
 security = HTTPBearer()
+
+JWKS_URL = "https://genuine-albacore-22.clerk.accounts.dev/.well-known/jwks.json"
+jwk_client = PyJWKClient(JWKS_URL)
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
@@ -23,8 +27,14 @@ async def get_current_user(
 ) -> User:
     token = credentials.credentials
     try:
-        unverified_payload = jwt.decode(token, options={"verify_signature": False})
-        clerk_id = unverified_payload.get("sub")
+        signing_key = jwk_client.get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            options={"verify_aud": False}
+        )
+        clerk_id = payload.get("sub")
         if not clerk_id:
             raise HTTPException(status_code=401, detail="Token inválido")
     except Exception as e:

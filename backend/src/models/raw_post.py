@@ -10,16 +10,17 @@ class RawPost(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     scan_job_id = Column(UUID(as_uuid=True), ForeignKey("scan_jobs.id"))
-    reddit_id = Column(String, unique=True, index=True)
-    subreddit = Column(String)
+    source_id = Column(String, unique=True, index=True) # Ex reddit_id
+    source_platform = Column(String, default="reddit") # 'reddit', 'hackernews', 'youtube'
+    source_community = Column(String) # Ex subreddit (or tag/search query)
     title = Column(String)
     body = Column(Text)
     top_comments = Column(Text)
-    score = Column(Integer)
-    num_comments = Column(Integer)
-    reddit_created_at = Column(DateTime)
+    engagement_score = Column(Integer) # Ex score (upvotes, likes)
+    reply_count = Column(Integer) # Ex num_comments
+    source_created_at = Column(DateTime) # Ex reddit_created_at
     url = Column(String)
     scraped_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
-    scan_job = relationship("ScanJob", back_populates="raw_posts")
-    pain_points = relationship("PainPoint", back_populates="raw_post")
+    scan_job = relationship("ScanJob", back_populates="raw_posts", lazy="selectin")
+    pain_points = relationship("PainPoint", back_populates="raw_post", cascade="all, delete-orphan", lazy="selectin")

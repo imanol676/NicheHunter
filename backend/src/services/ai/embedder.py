@@ -38,8 +38,17 @@ async def procesar_embeddings_pendientes(scan_job_id: str):
         
         for punto in puntos_pendientes:
             print(f"Calculando matemáticas (3072 dimensiones) para el problema: '{punto.category}'...")
-            vector = await generar_vector_azure(punto.description)
-            punto.embedding = vector
+            
+            if not punto.description:
+                print("  Saltando punto porque no tiene descripción.")
+                continue
+                
+            try:
+                vector = await generar_vector_azure(punto.description)
+                punto.embedding = vector
+            except Exception as e:
+                print(f"  Error al calcular embedding: {e}")
+                continue
             
         await session.commit()
         print("¡Vectores guardados exitosamente con Azure!")

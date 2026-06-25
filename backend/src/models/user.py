@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime, timezone
 from src.db.base import Base
+from sqlalchemy import Integer
 
 class User(Base):
     __tablename__ = "users"
@@ -11,4 +12,5 @@ class User(Base):
     clerk_id = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     name = Column(String)
+    credits_remaining = Column(Integer, default=2)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

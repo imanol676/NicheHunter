@@ -13,19 +13,39 @@ async def pausa_humana(min_segundos: float = 2.0, max_segundos: float = 5.0):
     await asyncio.sleep(tiempo_espera)
 
 
-async def run_scraper(subreddits: list[str], scan_job_id: str):
-    print(f"Iniciando escaneo de {len(subreddits)} subreddits...")
+from src.services.scraper.hn_json_client import try_fetch_hn
+from src.services.scraper.youtube_api_client import try_fetch_youtube
+
+async def run_scraper(extraction_plan: dict, scan_job_id: str):
+    print("Iniciando escaneo multi-plataforma...")
     
-    for sub in subreddits:
-        print(f"\n--- Extrayendo r/{sub} ---")
-        
-        # 1. Llamar a try_fetch_reddit
+    reddit_communities = extraction_plan.get("reddit_communities", [])
+    hn_keywords = extraction_plan.get("hackernews_keywords", [])
+    yt_queries = extraction_plan.get("youtube_search_queries", [])
+    
+    # 1. Scraping Reddit
+    for sub in reddit_communities:
+        print(f"\n--- Extrayendo Reddit r/{sub} ---")
         posts = await try_fetch_reddit(sub)
-        print(f"Se encontraron {len(posts)} posts limpios.")
         await guardar_posts_en_db(posts, scan_job_id)
-        # 2. Hacer la pausa humana ANTES de pasar al siguiente subreddit
-        if sub != subreddits[-1]:
+        if sub != reddit_communities[-1]:
             await pausa_humana(2.5, 5.5)
+            
+    # 2. Scraping Hacker News
+    for kw in hn_keywords:
+        print(f"\n--- Extrayendo Hacker News: '{kw}' ---")
+        posts = await try_fetch_hn(kw)
+        await guardar_posts_en_db(posts, scan_job_id)
+        if kw != hn_keywords[-1]:
+            await pausa_humana(1.0, 3.0)
+            
+    # 3. Scraping YouTube
+    for query in yt_queries:
+        print(f"\n--- Extrayendo YouTube: '{query}' ---")
+        posts = await try_fetch_youtube(query)
+        await guardar_posts_en_db(posts, scan_job_id)
+        if query != yt_queries[-1]:
+            await pausa_humana(2.0, 4.0)
 
 async def guardar_posts_en_db(posts_limpios: list[dict], scan_job_id: str):
     if not posts_limpios:
@@ -38,8 +58,8 @@ async def guardar_posts_en_db(posts_limpios: list[dict], scan_job_id: str):
         # Preparamos la orden de inserción masiva
         stmt = insert(RawPost).values(posts_limpios)
         
-        # Magia de Postgres: "Si este reddit_id ya existe, simplemente ignóralo"
-        stmt = stmt.on_conflict_do_nothing(index_elements=['reddit_id'])
+        # Magia de Postgres: "Si este source_id ya existe, simplemente ignóralo"
+        stmt = stmt.on_conflict_do_nothing(index_elements=['source_id'])
         
         # Ejecutamos la orden y confirmamos los cambios
         await session.execute(stmt)
