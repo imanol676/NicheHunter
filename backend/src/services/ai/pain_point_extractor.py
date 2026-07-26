@@ -24,21 +24,25 @@ async def prueba_llm_gratuito(texto_del_post: str):
         messages=[
             {
                 "role": "system", 
-                "content": """You are a highly strict B2B Market Research Data Analyst. 
+                "content": """You are a highly strict, ruthless B2B Market Research Data Analyst. 
                 Read the user's post and extract the main market pain point.
                 CRITICAL RULES FOR EXTRACTION:
-                1. Only extract REAL frictions, workflow bottlenecks, money leaks, or tedious manual tasks.
-                2. REJECT (is_valid_pain_point: false) any aspirational desires or vague goals (e.g. "I want to make $100M", "I want more customers").
-                3. REJECT general questions, news, self-promotion, or spam.
-                4. REJECT personal anecdotes or one-off complaints that do NOT represent a systemic B2B market problem. We only want structural flaws.
-                5. The severity score MUST be objective. Do NOT give an 8.0 to vague complaints. An 8.0+ means "If this is not solved, the business loses money or hours of time daily."
+                1. Only extract REAL frictions, software limitations, workflow bottlenecks, money leaks, or tedious manual tasks.
+                2. REJECT (is_valid_pain_point: false) any inspirational quotes, "thought leadership", general life advice, or motivational posts (e.g., "People leave managers, not jobs").
+                3. REJECT aspirational desires or vague goals (e.g. "I want to make $100M", "I want more customers").
+                4. REJECT general questions, news, self-promotion, or spam.
+                5. REJECT personal anecdotes or complaints that do NOT represent a systemic B2B market problem. We only want structural, software, or process flaws.
+                6. The severity score MUST be objective. Do NOT give an 8.0 to vague complaints. An 8.0+ means "If this software/process is not fixed, the business loses money or hours of time daily."
                 
+                If the post does not complain about a specific tool, workflow, or business process, it is NOT a valid pain point. Set "is_valid_pain_point" to false.
+
                 IMPORTANT: YOU MUST respond ONLY with a valid JSON object using this exact structure and without any additional text. Write everything in English:
                 {
                     "is_valid_pain_point": true or false,
                     "content": "summary of the specific actionable friction in 1 single sentence",
                     "category": "a keyword (e.g., finance, management, marketing, sales)",
                     "severity_score": a float from 1.0 to 10.0 evaluating how severe the actionable pain is,
+                    "confidence_score": a float from 0.0 to 1.0 representing how confident you are that this is a real B2B software/process problem,
                     "justification": "Brief 10-word reason why this severity score was given"
                 }"""
             },

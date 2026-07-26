@@ -15,6 +15,7 @@ class ScanJob(Base):
     target_industry = Column(String, nullable=True)
     business_process = Column(String, nullable=True)
     subreddits = Column(ARRAY(String))
+    competitors = Column(ARRAY(String), default=list)
     status = Column(String, default="pending")
     posts_found = Column(Integer, default=0)
     pain_points_extracted = Column(Integer, default=0)

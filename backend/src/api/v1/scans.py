@@ -14,6 +14,7 @@ class ScanRequest(BaseModel):
     niche: str | None = None
     target_industry: str | None = None
     business_process: str | None = None
+    competitors: str | None = None
 
 @router.post("/")
 async def create_scan(
@@ -30,18 +31,23 @@ async def create_scan(
     else:
         combined_query = request.niche or "General"
         
+    comp_list = []
+    if request.competitors:
+        comp_list = [c.strip() for c in request.competitors.split(",") if c.strip()]
+        
     scan_job = ScanJob(
         user_id=user.id, 
         niche_query=combined_query,
         target_industry=request.target_industry,
-        business_process=request.business_process
+        business_process=request.business_process,
+        competitors=comp_list
     )
     db.add(scan_job)
     await db.commit()
     await db.refresh(scan_job)
 
     # Enviamos el ID del scan_job a la tarea de fondo de EXPLORACION (Fase 1)
-    task = run_exploration_pipeline.delay(combined_query, str(scan_job.id))
+    task = run_exploration_pipeline.delay(combined_query, str(scan_job.id), comp_list)
     return {"task_id": task.id, "scan_job_id": str(scan_job.id), "message": f"Exploración para '{combined_query}' encolada."}
 
 @router.get("/{scan_job_id}/preview")

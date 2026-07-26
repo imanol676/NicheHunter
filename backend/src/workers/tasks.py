@@ -12,10 +12,10 @@ from src.services.ai.embedder import procesar_embeddings_pendientes
 from src.services.ai.clusterizer import agrupar_pain_points
 from src.services.ai.niche_expander import expand_niche_to_sources
 
-async def run_exploration_task(niche: str, scan_job_id: str, task_self):
+async def run_exploration_task(niche: str, scan_job_id: str, competitors: list[str], task_self):
     try:
         task_self.update_state(state='PROGRESS', meta={'status': f"Analizando nicho y mapeando fuentes con Llama-3..."})
-        extraction_plan = await expand_niche_to_sources(niche)
+        extraction_plan = await expand_niche_to_sources(niche, competitors)
         
         reddit_str = ", ".join(extraction_plan.get("reddit_communities", []))
         hn_str = ", ".join(extraction_plan.get("hackernews_keywords", []))
@@ -114,10 +114,12 @@ async def run_ideation_task(cluster_id: str, niche: str, task_self):
         raise Ignore()
 
 @celery_app.task(bind=True, name="run_exploration_pipeline")
-def run_exploration_pipeline(self, niche: str, scan_job_id: str):
+def run_exploration_pipeline(self, niche: str, scan_job_id: str, competitors: list = None):
+    if competitors is None:
+        competitors = []
     self.update_state(state='PROGRESS', meta={'status': 'Iniciando Exploración...'})
     loop = asyncio.get_event_loop()
-    return loop.run_until_complete(run_exploration_task(niche, scan_job_id, self))
+    return loop.run_until_complete(run_exploration_task(niche, scan_job_id, competitors, self))
 
 @celery_app.task(bind=True, name="run_deep_analysis_pipeline")
 def run_deep_analysis_pipeline(self, niche: str, scan_job_id: str):

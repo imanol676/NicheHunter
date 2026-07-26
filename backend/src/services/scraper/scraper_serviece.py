@@ -22,8 +22,18 @@ async def run_scraper(extraction_plan: dict, scan_job_id: str):
     reddit_communities = extraction_plan.get("reddit_communities", [])
     hn_keywords = extraction_plan.get("hackernews_keywords", [])
     yt_queries = extraction_plan.get("youtube_search_queries", [])
+    b2b_keywords = extraction_plan.get("b2b_search_keywords", [])
     
-    # 1. Scraping Reddit
+    # 1. Scraping B2B Software Reviews & LinkedIn (Alta Prioridad)
+    from src.services.scraper.b2b_search_client import fetch_all_b2b_channels
+    for kw in b2b_keywords:
+        print(f"\n--- Extrayendo Web B2B (G2, Capterra, LinkedIn): '{kw}' ---")
+        posts = await fetch_all_b2b_channels(kw)
+        await guardar_posts_en_db(posts, scan_job_id)
+        if kw != b2b_keywords[-1]:
+            await pausa_humana(2.0, 4.0)
+
+    # 2. Scraping Reddit
     for sub in reddit_communities:
         print(f"\n--- Extrayendo Reddit r/{sub} ---")
         posts = await try_fetch_reddit(sub)
@@ -31,7 +41,7 @@ async def run_scraper(extraction_plan: dict, scan_job_id: str):
         if sub != reddit_communities[-1]:
             await pausa_humana(2.5, 5.5)
             
-    # 2. Scraping Hacker News
+    # 3. Scraping Hacker News
     for kw in hn_keywords:
         print(f"\n--- Extrayendo Hacker News: '{kw}' ---")
         posts = await try_fetch_hn(kw)
@@ -39,7 +49,7 @@ async def run_scraper(extraction_plan: dict, scan_job_id: str):
         if kw != hn_keywords[-1]:
             await pausa_humana(1.0, 3.0)
             
-    # 3. Scraping YouTube
+    # 4. Scraping YouTube
     for query in yt_queries:
         print(f"\n--- Extrayendo YouTube: '{query}' ---")
         posts = await try_fetch_youtube(query)

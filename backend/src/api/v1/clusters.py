@@ -78,11 +78,29 @@ async def get_cluster_pain_points(id: UUID, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Clúster no encontrado")
 
     # Obtenemos los pain points
-    query = select(PainPoint).where(PainPoint.cluster_id == id)
+    from src.models.raw_post import RawPost
+    query = select(PainPoint, RawPost.url).join(RawPost, PainPoint.raw_post_id == RawPost.id).where(PainPoint.cluster_id == id)
     result = await db.execute(query)
-    pain_points = result.scalars().all()
+    rows = result.all()
     
-    return pain_points
+    response_data = []
+    for pp, url in rows:
+        pp_dict = {
+            "id": pp.id,
+            "description": pp.description,
+            "category": pp.category,
+            "severity": pp.severity,
+            "confidence_score": pp.confidence_score,
+            "frequency_count": pp.frequency_count,
+            "metadata": pp.metadata_,
+            "raw_post_id": pp.raw_post_id,
+            "cluster_id": pp.cluster_id,
+            "url": url,
+            "created_at": pp.created_at
+        }
+        response_data.append(pp_dict)
+    
+    return response_data
 
 @router.post("/{cluster_id}/generate-report")
 async def generate_report_for_cluster(
