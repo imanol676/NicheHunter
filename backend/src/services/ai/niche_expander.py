@@ -55,19 +55,18 @@ Output example:
         texto_crudo = response.choices[0].message.content
         diccionario = json.loads(texto_crudo)
         
-        # Clean up
-        reddit = [str(sub).strip().lower().replace("r/", "") for sub in diccionario.get("reddit_communities", [])][:5]
-        hn = [str(k).strip().lower() for k in diccionario.get("hackernews_keywords", [])][:5]
-        youtube = [str(q).strip().lower() for q in diccionario.get("youtube_search_queries", [])][:5]
-        b2b = [str(b).strip().lower() for b in diccionario.get("b2b_search_keywords", [])][:5]
+        # Clean up and expand limits to 10 per source
+        reddit = [str(sub).strip().lower().replace("r/", "") for sub in diccionario.get("reddit_communities", [])][:10]
+        hn = [str(k).strip().lower() for k in diccionario.get("hackernews_keywords", [])][:10]
+        youtube = [str(q).strip().lower() for q in diccionario.get("youtube_search_queries", [])][:10]
+        b2b = [str(b).strip().lower() for b in diccionario.get("b2b_search_keywords", [])][:10]
         
         # Inject competitor queries if provided
         for comp in competitors:
             b2b.append(f"{comp} reviews cons")
             b2b.append(f"{comp} alternatives complaints")
             
-        # Ensure we don't exceed too many if competitors were added (limit to 10 total)
-        b2b = b2b[:10]
+        b2b = b2b[:12]
         
         if not reddit and not hn and not youtube and not b2b:
             return {"reddit_communities": [niche.replace(" ", "").lower()], "hackernews_keywords": [niche], "youtube_search_queries": [niche], "b2b_search_keywords": [niche + " cons"]}
@@ -82,4 +81,5 @@ Output example:
     except Exception as e:
         print(f"Error al expandir nicho con Groq: {e}")
         return {"reddit_communities": [niche.replace(" ", "").lower()], "hackernews_keywords": [niche], "youtube_search_queries": [niche]}
+
 

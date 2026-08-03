@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { apiClient } from "@/lib/apiClient";
 
 export function AxiosInterceptor({ children }: { children: React.ReactNode }) {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const requestInterceptor = apiClient.interceptors.request.use(
       async (config) => {
-        const token = await getToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        if (isLoaded && isSignedIn) {
+          const token = await getToken();
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
         }
         return config;
       },
@@ -22,7 +24,7 @@ export function AxiosInterceptor({ children }: { children: React.ReactNode }) {
     return () => {
       apiClient.interceptors.request.eject(requestInterceptor);
     };
-  }, [getToken]);
+  }, [getToken, isLoaded, isSignedIn]);
 
   return <>{children}</>;
 }

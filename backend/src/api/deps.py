@@ -38,6 +38,7 @@ async def get_current_user(
         if not clerk_id:
             raise HTTPException(status_code=401, detail="Token inválido")
     except Exception as e:
+        print(f"[AUTH DEBUG ERROR]: {type(e).__name__}: {e}")
         raise HTTPException(status_code=401, detail=f"Error en token: {str(e)}")
 
     result = await db.execute(select(User).where(User.clerk_id == clerk_id))

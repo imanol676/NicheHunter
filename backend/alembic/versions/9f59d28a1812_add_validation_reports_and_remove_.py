@@ -43,8 +43,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['cluster_id'], ['pain_point_clusters.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.drop_table('opportunities')
     op.drop_table('saved_opportunities')
+    op.drop_table('opportunities')
     # ### end Alembic commands ###
 
 

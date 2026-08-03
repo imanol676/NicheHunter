@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import { Show, SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import ClusterCard from "@/components/dashboard/ClusterCard";
@@ -11,6 +11,7 @@ import ValidationReportModal from "@/components/dashboard/ValidationReportModal"
 import { Trash2 } from "lucide-react";
 
 export default function DashboardPage() {
+  const { isLoaded, isSignedIn } = useAuth();
   const [targetIndustry, setTargetIndustry] = useState("");
   const [businessProcess, setBusinessProcess] = useState("");
   const [competitors, setCompetitors] = useState("");
@@ -111,7 +112,7 @@ export default function DashboardPage() {
       const response = await apiClient.get("/clusters/");
       return response.data as any[];
     },
-    enabled: isFinished || activeTaskId === null,
+    enabled: (isFinished || activeTaskId === null) && !!isLoaded && !!isSignedIn,
   });
 
   const reportsQuery = useQuery({
@@ -120,7 +121,7 @@ export default function DashboardPage() {
       const response = await apiClient.get("/reports/");
       return response.data as any[];
     },
-    enabled: isFinished || activeTaskId === null,
+    enabled: (isFinished || activeTaskId === null) && !!isLoaded && !!isSignedIn,
   });
 
   // Mutations for deletions

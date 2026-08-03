@@ -17,4 +17,28 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    
+    # En Windows, usar el pool 'solo' evita la corrupción de sockets entre procesos (WinError 10054)
+    worker_pool='solo' if os.name == 'nt' else 'prefork',
+    
+    # Resiliencia de conexión Redis en Windows y Docker
+    broker_connection_retry_on_startup=True,
+    broker_connection_max_retries=10,
+    redis_backend_always_retry=True,
+    redis_socket_keepalive=True,
+    redis_socket_timeout=None,
+    redis_socket_connect_timeout=30.0,
+    broker_transport_options={
+        'visibility_timeout': 3600,
+        'health_check_interval': 15,
+        'max_retries': 5,
+    },
+    result_backend_transport_options={
+        'health_check_interval': 15,
+        'retry_policy': {
+            'timeout': 10.0,
+        }
+    }
 )
+
+
